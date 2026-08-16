@@ -1,0 +1,57 @@
+import os
+import subprocess
+
+def get_git_diff():
+    """Gets the uncommitted changes in the local repository."""
+    try:
+        # Checking for staged changes first
+        diff = subprocess.check_output(["git", "diff", "--cached"]).decode("utf-8")
+        if not diff:
+            # If no staged changes, check unstaged changes
+            diff = subprocess.check_output(["git", "diff"]).decode("utf-8")
+        return diff
+    except Exception:
+        return ""
+
+def generate_commit_message(diff_text):
+    """Analyzes the code diff and returns a smart semantic commit message."""
+    if not diff_text:
+        return "✨ chore: minor code cleanup and performance optimizations"
+    
+    lines = diff_text.split('\n')
+    added_lines = [l for l in lines if l.startswith('+') and not l.startswith('+++')]
+    removed_lines = [l for l in lines if l.startswith('-') and not l.startswith('---')]
+    
+    # Structural counters
+    add_count = len(added_lines)
+    del_count = len(removed_lines)
+    
+    # Logic matching
+    is_fix = any("bug" in l.lower() or "fix" in l.lower() or "error" in l.lower() for l in lines)
+    is_import = any("import " in l or "include" in l for l in lines)
+    is_func = any("def " in l or "function" in l or "class " in l for l in lines)
+    
+    # Smart classification logic
+    if is_fix:
+        msg = f"🐛 fix: resolved runtime exceptions and patched logical errors (+{add_count} / -{del_count})"
+    elif is_func:
+        msg = f"🚀 feat: implemented core structural methods and business logic updates (+{add_count} lines)"
+    elif is_import:
+        msg = f"📦 chore: updated package dependencies and external library modules"
+    else:
+        msg = f"⚡ refactor: optimized block statements and refined execution path (+{add_count} changes)"
+        
+    return msg
+
+if __name__ == "__main__":
+    print("=" * 60)
+    print("🤖 SMART GIT-COMMIT AI GENERATOR")
+    print("=" * 60)
+    print("🔍 Inspecting local repository state...")
+    
+    git_changes = get_git_diff()
+    generated_msg = generate_commit_message(git_changes)
+    
+    print("\n💡 Suggested Semantic Commit Message:")
+    print(f"👉 \033[92m{generated_msg}\033[0m")
+    print("=" * 60)
